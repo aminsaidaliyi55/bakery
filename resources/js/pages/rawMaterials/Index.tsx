@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, usePage } from "@inertiajs/react";
+import React, { useState, useEffect } from "react";
+import { Link, usePage, router } from "@inertiajs/react";
 import AppLayout from "@/layouts/app-layout";
 
 interface RawMaterial {
@@ -7,7 +7,7 @@ interface RawMaterial {
     name: string;
     description?: string;
     unit: string;
-    stock_quantity: number;
+    stock: number;
     reorder_level: number;
     price_per_unit: number;
     material_type: {
@@ -22,10 +22,40 @@ interface RawMaterial {
 
 interface PageProps {
     rawMaterials: RawMaterial[];
+    filters: {
+        search: string;
+        bakery_id: string;
+        material_type_id: string;
+    };
+    bakeries: { id: number; name: string }[];
+    materialTypes: { id: number; name: string }[];
 }
 
 const Index: React.FC = () => {
-    const { rawMaterials } = usePage<PageProps>().props;
+    const { rawMaterials, filters, bakeries, materialTypes } = usePage<PageProps>().props;
+
+    const [search, setSearch] = useState(filters.search || "");
+    const [bakeryId, setBakeryId] = useState(filters.bakery_id || "");
+    const [materialTypeId, setMaterialTypeId] = useState(filters.material_type_id || "");
+
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            router.get(
+                "/rawMaterials",
+                {
+                    search,
+                    bakery_id: bakeryId,
+                    material_type_id: materialTypeId,
+                },
+                {
+                    preserveState: true,
+                    replace: true,
+                }
+            );
+        }, 300);
+
+        return () => clearTimeout(delayDebounce);
+    }, [search, bakeryId, materialTypeId]);
 
     return (
         <AppLayout>
@@ -40,6 +70,42 @@ const Index: React.FC = () => {
                     </Link>
                 </div>
 
+                {/* Filters */}
+                <div className="flex space-x-4 mb-4">
+                    <input
+                        type="text"
+                        placeholder="Search by name"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="border px-3 py-2 rounded w-1/3"
+                    />
+                    <select
+                        value={materialTypeId}
+                        onChange={(e) => setMaterialTypeId(e.target.value)}
+                        className="border px-3 py-2 rounded"
+                    >
+                        <option value="">All Types</option>
+                        {materialTypes.map((type) => (
+                            <option key={type.id} value={type.id}>
+                                {type.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        value={bakeryId}
+                        onChange={(e) => setBakeryId(e.target.value)}
+                        className="border px-3 py-2 rounded"
+                    >
+                        <option value="">All Bakeries</option>
+                        {bakeries.map((b) => (
+                            <option key={b.id} value={b.id}>
+                                {b.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Table */}
                 <div className="overflow-x-auto bg-white shadow rounded">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -68,7 +134,7 @@ const Index: React.FC = () => {
                                     <td className="px-4 py-2">{rm.material_type?.name}</td>
                                     <td className="px-4 py-2">{rm.bakery?.name}</td>
                                     <td className="px-4 py-2">{rm.unit}</td>
-                                    <td className="px-4 py-2">{rm.stock_quantity}</td>
+                                    <td className="px-4 py-2">{rm.stock}</td>
                                     <td className="px-4 py-2">{rm.reorder_level}</td>
                                     <td className="px-4 py-2">{rm.price_per_unit}</td>
                                     <td className="px-4 py-2 space-x-2">

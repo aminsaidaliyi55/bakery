@@ -28,6 +28,15 @@ class Bakery extends Model
         'cleaner_id',      // foreign key to users table
         'gatekeeper_id',   // foreign key to users table
     ];
+
+    public function employeeAllowances()
+    {
+        return $this->hasMany(EmployeeAllowance::class);
+    }
+     public function employeeExpenses()
+        {
+            return $this->hasMany(EmployeeExpense::class);
+        }
 public function rawMaterialTransactions()
 {
     return $this->hasMany(RawMaterialTransaction::class);

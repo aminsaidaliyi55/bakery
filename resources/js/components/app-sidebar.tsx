@@ -52,57 +52,35 @@ const mainNavItems: NavItem[] = [
     href: '/users',
     icon: User,
   },
+    // 🍞 Bakery Management
+    {
+        title: 'Bakery Info',
+        href: '/bakeries',
+        icon: Folder,
+    },
+    // 📦 Stock & Inventory
+    {
+        title: 'Inventory',
+        href: '/inventory',
+        icon: Archive,
+    },
 
-  // 🍞 Bakery Management
-  {
-    title: 'Bakery Info',
-    href: '/bakeries',
-    icon: Folder,
-  },
-  {
-    title: 'Employees',
-    href: '/employees',
-    icon: Users,
-  },
-  {
-    title: 'Contracts',
-    href: '/contracts',
-    icon: ClipboardList,
-  },
+    {
+        title: 'Raw Materials transaction',
+        href: '/rawMaterialstransaction',
+        icon: Package,
+    },
 
-  // 🏭 Production Logic
-  {
-    title: 'Production',
-    href: '/production',
-    icon: Box,
-  },
-  {
-    title: 'Pastry Categories',
-    href: '/pastry-categories',
-    icon: LayoutGrid,
-  },
-  {
-    title: 'Pastries',
-    href: '/pastries',
-    icon: Box,
-  },
-
-  // 📦 Stock & Inventory
-  {
-    title: 'Inventory',
-    href: '/inventory',
-    icon: Archive,
-  },
-  {
-    title: 'Raw Materials',
-    href: '/rawMaterials',
-    icon: Package,
-  },
-  {
-    title: 'Material Types',
-    href: '/material-types',
-    icon: Folder,
-  },
+    {
+        title: 'Raw Materials',
+        href: '/rawMaterials',
+        icon: Package,
+    },
+    {
+        title: 'Material Types',
+        href: '/material-types',
+        icon: Folder,
+    },
     {
         title: 'Supply',
         href: '/rawMaterialsSup/supply',
@@ -114,6 +92,60 @@ const mainNavItems: NavItem[] = [
         href: '/rawMaterialsSup/usage',
         icon: Truck, // or any icon you want, e.g., Box, Package, etc.
     },
+
+
+
+
+    {
+        title: 'Employees',
+        href: '/employees',
+        icon: Users,
+    },
+
+    {
+        title: 'Daily Expenses',
+        href: '/daily-expenses',  // <-- Your new route path
+        icon: DollarSign,         // <-- You can pick a different icon if you like
+    },
+    {
+        title: 'Daily Allowance',
+        href: '/employee-allowances',  // <-- Your new route path
+        icon: DollarSign,         // <-- You can pick a different icon if you like
+    },
+
+
+
+
+
+  {
+    title: 'Contracts',
+    href: '/contracts',
+    icon: ClipboardList,
+  },
+
+  // 🏭 Production Logic
+    {
+        title: 'Production',
+        href: '/productions',
+        icon: Box,
+    },
+    {
+        title: 'Product',
+        href: '/products',
+        icon: Box,
+    },
+  {
+    title: 'Pastry Categories',
+    href: '/pastry-categories',
+    icon: LayoutGrid,
+  },
+  {
+    title: 'Pastries',
+    href: '/pastries',
+    icon: Box,
+  },
+
+
   // 🤝 Suppliers & Purchases
   {
     title: 'Suppliers',
@@ -134,7 +166,7 @@ const mainNavItems: NavItem[] = [
   },
   {
     title: 'Carts',
-    href: '/add-to-carts',
+    href: '/carts',
     icon: ShoppingCart,
   },
   {

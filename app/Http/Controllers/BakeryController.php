@@ -110,28 +110,68 @@ class BakeryController extends Controller
         return redirect()->route('bakeries.index')->with('success', 'Bakery created successfully.');
     }
 
-    public function show($id)
-    {
-        $bakery = Bakery::findOrFail($id);
-        $user = Auth::user();
 
-        if (! $user->hasRole('Super Admin') && ! in_array($user->id, [
-            $bakery->owner_id,
-            $bakery->manager_id,
-            $bakery->storekeeper_id,
-            $bakery->dough_mixer_id,
-            $bakery->baker_id,
-            $bakery->helper_id,
-            $bakery->cleaner_id,
-            $bakery->gatekeeper_id,
-        ])) {
-            abort(403, 'Unauthorized');
-        }
 
-        return Inertia::render('Bakeries/Show', [
-            'bakery' => $bakery,
-        ]);
+
+public function show(Bakery $bakery)
+{
+    $user = Auth::user();
+
+    // Authorization check
+    if (! $user->hasRole('Super Admin') && ! in_array($user->id, [
+        $bakery->owner_id,
+        $bakery->manager_id,
+        $bakery->storekeeper_id,
+        $bakery->dough_mixer_id,
+        $bakery->baker_id,
+        $bakery->helper_id,
+        $bakery->cleaner_id,
+        $bakery->gatekeeper_id,
+    ])) {
+        abort(403, 'Unauthorized');
     }
+
+    // Load relations including rawMaterialTransactions
+    $bakery->load([
+        'owner', 'manager', 'storekeeper', 'doughMixer', 'baker',
+        'helper', 'cleaner', 'gatekeeper', 'employees.user',
+        'rawMaterials', 'employeeExpenses', 'employeeAllowances', 'sales',
+        'rawMaterialTransactions.rawMaterial', // eager load rawMaterial for each transaction
+    ]);
+
+    // Calculate raw material cost using transactions of type 'purchase' (example)
+    $rawMaterialCost = $bakery->rawMaterialTransactions
+        ->filter(fn($tx) => $tx->transaction_type === 'purchase')
+        ->sum(fn($tx) => $tx->quantity * ($tx->rawMaterial->price_per_unit ?? 0));
+
+    $employeeSalaries = $bakery->employees->sum('salary');
+    $employeeExpenses = $bakery->employeeExpenses->sum('amount');
+    $employeeAllowances = $bakery->employeeAllowances->sum('amount');
+    $rent = $bakery->monthly_rent_fee ?? 0;
+
+    $totalExpenses = $rawMaterialCost + $employeeSalaries + $employeeExpenses + $employeeAllowances + $rent;
+    $revenue = $bakery->sales->sum('total_amount');
+    $profitLoss = $revenue - $totalExpenses;
+
+    return Inertia::render('Bakeries/Show', [
+        'bakery' => $bakery,
+        'employees' => $bakery->employees,
+        'profitLoss' => $profitLoss,
+        'revenue' => $revenue,
+        'expenses' => $totalExpenses,
+        'expenseBreakdown' => [
+            'rawMaterialCost' => $rawMaterialCost,
+            'employeeSalaries' => $employeeSalaries,
+            'employeeExpenses' => $employeeExpenses,
+            'employeeAllowances' => $employeeAllowances,
+            'rent' => $rent,
+        ],
+        // Pass raw material transactions for frontend detail display
+        'rawMaterialTransactions' => $bakery->rawMaterialTransactions,
+    ]);
+}
+
+
 
     public function edit($id)
     {

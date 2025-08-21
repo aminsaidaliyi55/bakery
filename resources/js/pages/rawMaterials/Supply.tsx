@@ -47,8 +47,15 @@ const Supply: React.FC<Props> = ({ bakeries, rawMaterials }) => {
     };
 
     const handleCancel = () => {
-        router.back();
+        // Redirect to a specific route (listing page)
+        router.visit("/rawMaterials");
     };
+
+    // Filter out duplicate raw materials by name
+    const uniqueRawMaterials = rawMaterials.filter(
+        (rm, index, self) =>
+            index === self.findIndex((r) => r.name === rm.name)
+    );
 
     return (
         <AppLayout>
@@ -58,6 +65,7 @@ const Supply: React.FC<Props> = ({ bakeries, rawMaterials }) => {
             >
                 <h1 className="text-xl font-bold mb-4">Record Raw Material Supply</h1>
 
+                {/* Bakery Selection */}
                 <div className="mb-3">
                     <label className="block mb-1">Bakery</label>
                     <select
@@ -78,6 +86,7 @@ const Supply: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                     )}
                 </div>
 
+                {/* Raw Material Selection */}
                 <div className="mb-3">
                     <label className="block mb-1">Raw Material</label>
                     <select
@@ -87,7 +96,7 @@ const Supply: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                         className="w-full border rounded p-2"
                     >
                         <option value="">Select Raw Material</option>
-                        {rawMaterials.map((rm) => (
+                        {uniqueRawMaterials.map((rm) => (
                             <option key={rm.id} value={rm.id}>
                                 {rm.name}
                             </option>
@@ -98,6 +107,7 @@ const Supply: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                     )}
                 </div>
 
+                {/* Quantity Input */}
                 <div className="mb-3">
                     <label className="block mb-1">Quantity</label>
                     <input
@@ -114,6 +124,7 @@ const Supply: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                     )}
                 </div>
 
+                {/* Measurement Unit Selection */}
                 <div className="mb-3">
                     <label className="block mb-1">Measurement Unit</label>
                     <select
@@ -131,6 +142,7 @@ const Supply: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                     )}
                 </div>
 
+                {/* Buttons */}
                 <div className="flex justify-between">
                     <button
                         type="submit"

@@ -1,6 +1,6 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { router } from "@inertiajs/react";
-import AppLayout from '@/layouts/app-layout';
+import AppLayout from "@/layouts/app-layout";
 
 interface Bakery {
     id: number;
@@ -12,22 +12,30 @@ interface RawMaterial {
     name: string;
 }
 
+interface Product {
+    id: number;
+    name: string;
+}
+
 interface Props {
     bakeries: Bakery[];
     rawMaterials: RawMaterial[];
+    products: Product[]; // ✅ Add products from backend
 }
 
 interface FormData {
     bakery_id: string;
     raw_material_id: string;
+    product_id: string; // ✅ new field
     quantity: string;
     measurement_unit: string;
 }
 
-const Usage: React.FC<Props> = ({ bakeries, rawMaterials }) => {
+const Usage: React.FC<Props> = ({ bakeries, rawMaterials, products }) => {
     const [form, setForm] = useState<FormData>({
         bakery_id: "",
         raw_material_id: "",
+        product_id: "", // ✅ initialize
         quantity: "",
         measurement_unit: "",
     });
@@ -48,14 +56,23 @@ const Usage: React.FC<Props> = ({ bakeries, rawMaterials }) => {
     };
 
     const handleCancel = () => {
-        window.history.back();
+        router.visit("/rawMaterials"); // keep consistent with supply cancel
     };
+
+    // Filter unique raw materials by name
+    const uniqueRawMaterials = rawMaterials.filter(
+        (rm, index, self) => index === self.findIndex((r) => r.name === rm.name)
+    );
 
     return (
         <AppLayout>
-            <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 bg-white rounded shadow">
+            <form
+                onSubmit={handleSubmit}
+                className="max-w-md mx-auto p-4 bg-white rounded shadow"
+            >
                 <h1 className="text-xl font-bold mb-4">Record Raw Material Usage</h1>
 
+                {/* Bakery Selection */}
                 <div className="mb-3">
                     <label className="block mb-1">Bakery</label>
                     <select
@@ -71,9 +88,12 @@ const Usage: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                             </option>
                         ))}
                     </select>
-                    {errors.bakery_id && <p className="text-red-600">{errors.bakery_id[0]}</p>}
+                    {errors.bakery_id && (
+                        <p className="text-red-600">{errors.bakery_id[0]}</p>
+                    )}
                 </div>
 
+                {/* Raw Material Selection */}
                 <div className="mb-3">
                     <label className="block mb-1">Raw Material</label>
                     <select
@@ -83,15 +103,39 @@ const Usage: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                         className="w-full border rounded p-2"
                     >
                         <option value="">Select Raw Material</option>
-                        {rawMaterials.map((rm) => (
+                        {uniqueRawMaterials.map((rm) => (
                             <option key={rm.id} value={rm.id}>
                                 {rm.name}
                             </option>
                         ))}
                     </select>
-                    {errors.raw_material_id && <p className="text-red-600">{errors.raw_material_id[0]}</p>}
+                    {errors.raw_material_id && (
+                        <p className="text-red-600">{errors.raw_material_id[0]}</p>
+                    )}
                 </div>
 
+                {/* ✅ products Selection */}
+                <div className="mb-3">
+                    <label className="block mb-1">Product</label>
+                    <select
+                        name="product_id"
+                        value={form.product_id}
+                        onChange={handleChange}
+                        className="w-full border rounded p-2"
+                    >
+                        <option value="">Select Product</option>
+                        {products.map((product) => (
+                            <option key={product.id} value={product.id}>
+                                {product.name}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.product_id && (
+                        <p className="text-red-600">{errors.product_id[0]}</p>
+                    )}
+                </div>
+
+                {/* Quantity Input */}
                 <div className="mb-3">
                     <label className="block mb-1">Quantity</label>
                     <input
@@ -103,9 +147,12 @@ const Usage: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                         onChange={handleChange}
                         className="w-full border rounded p-2"
                     />
-                    {errors.quantity && <p className="text-red-600">{errors.quantity[0]}</p>}
+                    {errors.quantity && (
+                        <p className="text-red-600">{errors.quantity[0]}</p>
+                    )}
                 </div>
 
+                {/* Measurement Unit Selection */}
                 <div className="mb-3">
                     <label className="block mb-1">Measurement Unit</label>
                     <select
@@ -118,11 +165,19 @@ const Usage: React.FC<Props> = ({ bakeries, rawMaterials }) => {
                         <option value="kg">kg</option>
                         <option value="litre">litre</option>
                     </select>
-                    {errors.measurement_unit && <p className="text-red-600">{errors.measurement_unit[0]}</p>}
+                    {errors.measurement_unit && (
+                        <p className="text-red-600">
+                            {errors.measurement_unit[0]}
+                        </p>
+                    )}
                 </div>
 
-                <div className="flex gap-4">
-                    <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+                {/* Buttons */}
+                <div className="flex justify-between">
+                    <button
+                        type="submit"
+                        className="bg-blue-600 text-white px-4 py-2 rounded"
+                    >
                         Record Usage
                     </button>
 

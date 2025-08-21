@@ -23,6 +23,7 @@ class Production extends Model
     /**
      * The bakery where production took place
      */
+
     public function bakery(): BelongsTo
     {
         return $this->belongsTo(Bakery::class);

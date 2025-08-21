@@ -13,14 +13,47 @@ class RawMaterialController extends Controller
     /**
      * Display a listing of the raw materials.
      */
-    public function index()
-    {
-        $rawMaterials = RawMaterial::with(['materialType', 'bakery'])->latest()->get();
+public function index(Request $request)
+{
+    $query = RawMaterial::query()
+        ->selectRaw('
+            MIN(id) as id,
+            name,
+            material_type_id,
+            bakery_id,
+            unit,
+            SUM(stock_quantity) as stock,
+            SUM(reorder_level) as reorder_level,
+            AVG(price_per_unit) as price_per_unit
+        ')
+        ->groupBy('name', 'material_type_id', 'bakery_id', 'unit')
+        ->with(['materialType', 'bakery']);
 
-        return Inertia::render('rawMaterials/Index', [
-            'rawMaterials' => $rawMaterials,
-        ]);
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
     }
+
+    if ($request->filled('material_type_id')) {
+        $query->where('material_type_id', $request->material_type_id);
+    }
+
+    if ($request->filled('bakery_id')) {
+        $query->where('bakery_id', $request->bakery_id);
+    }
+
+    $rawMaterials = $query->get();
+
+    return Inertia::render('rawMaterials/Index', [
+        'rawMaterials' => $rawMaterials,
+        'filters' => $request->only('search', 'material_type_id', 'bakery_id'),
+        'bakeries' => \App\Models\Bakery::select('id', 'name')->get(),
+        'materialTypes' => \App\Models\MaterialType::select('id', 'name')->get(),
+    ]);
+}
+
+
+
+
 
     /**
      * Show the form for creating a new raw material.

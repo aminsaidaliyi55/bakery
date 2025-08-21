@@ -1,177 +1,191 @@
-import React from "react";
-import { usePage, Link } from "@inertiajs/react";
-import AppLayout from "@/layouts/app-layout";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
+import React, { useEffect, useState } from "react";
+import { usePage, Link, router } from "@inertiajs/react";
 
-// Fix Leaflet's default icon issue with Vite/React
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-});
-
+// User interface: Represents a user with id, name, and role (like Owner, Manager, etc.)
 interface User {
     id: number;
     name: string;
+    role: string;
 }
 
+// Bakery interface: Represents bakery details and assigned employees in different roles
 interface Bakery {
     id: number;
     name: string;
-    logo?: string | null;
-    location?: string | null;
-    longitude?: number | null;
-    latitude?: number | null;
-    monthly_rent_fee?: string | null;
-    status?: string | null;
-    owner?: User | null;
-    manager?: User | null;
-    storekeeper?: User | null;
-    dough_mixer?: User | null;
-    baker?: User | null;
-    helper?: User | null;
-    cleaner?: User | null;
-    gatekeeper?: User | null;
+    location: string;
+    owner?: User;
+    manager?: User;
+    storekeeper?: User;
+    doughMixer?: User;
+    baker?: User;
+    helper?: User;
+    cleaner?: User;
+    gatekeeper?: User;
 }
 
+// Expense breakdown interface for clarity
+interface ExpenseBreakdown {
+    rawMaterialCost: number;
+    employeeSalaries: number;
+    employeeExpenses: number;
+    employeeAllowances: number;
+    rent: number;
+}
+
+// Props passed from Laravel backend via Inertia, including bakery and financial data
 interface PageProps {
     bakery: Bakery;
+    profitLoss: number; // Profit or loss calculated as revenue - expenses
+    revenue: number; // Total income from bakery sales
+    expenses: number; // Total cost incurred by the bakery
+    expenseBreakdown: ExpenseBreakdown; // detailed expense components
 }
 
 const Show: React.FC = () => {
-    const { bakery } = usePage<PageProps>().props;
+    // Extract props from Inertia page data
+    const { bakery, profitLoss, revenue, expenses, expenseBreakdown } = usePage<PageProps>().props;
 
-    const getLogoUrl = (logo?: string | null) => {
-        if (!logo) return null;
-        return `/storage/${logo}`;
+    // Local state to toggle blinking effect
+    const [blink, setBlink] = useState(true);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setBlink((prev) => !prev);
+        }, 700);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Helper to safely format numbers as currency with 2 decimals
+    const formatCurrency = (value: any) => {
+        const num = Number(value);
+        if (isNaN(num)) return "0.00";
+        return num.toFixed(2);
     };
 
-    const hasValidCoordinates =
-        bakery.latitude !== null &&
-        bakery.latitude !== undefined &&
-        bakery.longitude !== null &&
-        bakery.longitude !== undefined;
+    // Determine CSS class for profit/loss blinking and color
+    const profitLossClass = profitLoss > 0
+        ? `text-green-800 font-bold ${blink ? "opacity-100" : "opacity-50"} transition-opacity duration-500`
+        : profitLoss < 0
+            ? `text-red-700 font-bold ${blink ? "opacity-100" : "opacity-50"} transition-opacity duration-500`
+            : "text-yellow-700 font-bold";
+
+    // Helper function to display each assigned user role
+    const renderUser = (label: string, user?: User) => (
+        <div className="mb-1">
+            <strong>{label}:</strong>{" "}
+            {user ? (
+                <Link href={`/users/${user.id}`} className="text-blue-600 hover:underline">
+                    {user.name} ({user.role})
+                </Link>
+            ) : (
+                <span className="text-gray-500">Not assigned</span>
+            )}
+        </div>
+    );
 
     return (
-        <AppLayout>
-            <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow">
-                <h1 className="text-3xl font-bold mb-6">Bakery Details</h1>
+        <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded-lg">
 
-                <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-2">Basic Info</h2>
-                    <p>
-                        <strong>Name:</strong> {bakery.name}
-                    </p>
-                    <p>
-                        <strong>Location:</strong> {bakery.location || "—"}
-                    </p>
-                    <p>
-                        <strong>Latitude:</strong> {bakery.latitude ?? "—"}
-                    </p>
-                    <p>
-                        <strong>Longitude:</strong> {bakery.longitude ?? "—"}
-                    </p>
-                    <p>
-                        <strong>Monthly Rent Fee:</strong> {bakery.monthly_rent_fee ?? "—"}
-                    </p>
-                    <p>
-                        <strong>Status:</strong> {bakery.status || "Inactive"}
-                    </p>
-                </div>
+            {/* Back Button */}
+            <button
+                onClick={() => router.visit('/bakeries')}
+                className="mb-4 inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+                ← Back
+            </button>
 
-                <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-2">Logo</h2>
-                    {bakery.logo ? (
-                        <img
-                            src={getLogoUrl(bakery.logo)}
-                            alt={`${bakery.name} logo`}
-                            className="w-48 h-48 object-contain rounded border"
-                        />
+            {/* Page Title */}
+            <h1 className="text-3xl font-bold mb-6 border-b pb-2">Bakery Overview</h1>
+
+            {/* Bakery Basic Information Section */}
+            <div className="mb-4">
+                <p className="text-lg">
+                    <strong>Name:</strong> {bakery.name}
+                </p>
+                <p className="text-lg">
+                    <strong>Location:</strong> {bakery.location}
+                </p>
+            </div>
+
+            {/* Financial Summary Section */}
+            <div className="bg-gray-50 p-4 rounded border mb-6">
+                <h2 className="text-xl font-semibold mb-3">Financial Summary</h2>
+                <div className="space-y-1 text-base">
+
+                    {/* Total Revenue */}
+                    <p>
+                        <strong>Total Revenue:</strong>{" "}
+                        <span className="text-green-700">${formatCurrency(revenue)}</span>
+                    </p>
+
+                    {/* Total Expenses */}
+                    <p>
+                        <strong>Total Expenses:</strong>{" "}
+                        <span className="text-red-600">${formatCurrency(expenses)}</span>
+                    </p>
+
+                    {/* Profit or Loss */}
+                    <p>
+                        <strong>Profit/Loss:</strong>{" "}
+                        <span className={profitLossClass}>
+              ${formatCurrency(profitLoss)}
+            </span>
+                    </p>
+
+                    {/* Advisory Message */}
+                    {profitLoss < 0 ? (
+                        <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                            <strong>Warning:</strong> Your bakery is currently operating at a loss.
+                            Consider the following strategies to improve profitability:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                                <li>Review and negotiate raw material prices to reduce costs.</li>
+                                <li>Optimize employee schedules to reduce overtime and unnecessary expenses.</li>
+                                <li>Evaluate employee allowances and expenses for possible savings.</li>
+                                <li>Increase marketing efforts to boost sales revenue.</li>
+                                <li>Review pricing strategy to ensure competitive but profitable pricing.</li>
+                                <li>Minimize rent and overheads if possible by renegotiating lease terms.</li>
+                            </ul>
+                        </div>
+                    ) : profitLoss > 0 ? (
+                        <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                            Great job! Your bakery is profitable. Keep optimizing operations and exploring growth opportunities.
+                        </div>
                     ) : (
-                        <p>No logo uploaded.</p>
+                        <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+                            Your bakery is breaking even. Monitor your expenses and revenue carefully to maintain profitability.
+                        </div>
                     )}
-                </div>
 
-                <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-2">Location on Map</h2>
-                    {hasValidCoordinates ? (
-                        <MapContainer
-                            center={[bakery.latitude!, bakery.longitude!]}
-                            zoom={13}
-                            style={{ height: "300px", width: "100%" }}
-                            scrollWheelZoom={false}
-                        >
-                            <TileLayer
-                                attribution="&copy; OpenStreetMap contributors"
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                            <Marker position={[bakery.latitude!, bakery.longitude!]}>
-                                <Popup>{bakery.name}</Popup>
-                            </Marker>
-                        </MapContainer>
-                    ) : (
-                        <p className="text-gray-500">Location coordinates not available.</p>
-                    )}
-                </div>
-
-                <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-2">Assigned Users</h2>
-                    <table className="w-full border-collapse border border-gray-300 text-sm">
-                        <tbody>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Owner</td>
-                            <td className="border px-3 py-2">{bakery.owner?.name || "—"}</td>
-                        </tr>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Manager</td>
-                            <td className="border px-3 py-2">{bakery.manager?.name || "—"}</td>
-                        </tr>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Storekeeper</td>
-                            <td className="border px-3 py-2">{bakery.storekeeper?.name || "—"}</td>
-                        </tr>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Dough Mixer</td>
-                            <td className="border px-3 py-2">{bakery.dough_mixer?.name || "—"}</td>
-                        </tr>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Baker</td>
-                            <td className="border px-3 py-2">{bakery.baker?.name || "—"}</td>
-                        </tr>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Helper</td>
-                            <td className="border px-3 py-2">{bakery.helper?.name || "—"}</td>
-                        </tr>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Cleaner</td>
-                            <td className="border px-3 py-2">{bakery.cleaner?.name || "—"}</td>
-                        </tr>
-                        <tr>
-                            <td className="border px-3 py-2 font-semibold">Gatekeeper</td>
-                            <td className="border px-3 py-2">{bakery.gatekeeper?.name || "—"}</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="flex justify-between">
-                    <Link
-                        href="/bakeries"
-                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                    >
-                        Back to List
-                    </Link>
-                    <Link
-                        href={`/bakeries/${bakery.id}/edit`}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                        Edit Bakery
-                    </Link>
+                    {/* Detailed expense breakdown */}
+                    <div className="mt-6 p-3 bg-white border rounded shadow-sm">
+                        <h3 className="text-lg font-semibold mb-2">Expense Breakdown</h3>
+                        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            <li>Raw Material Cost: ${formatCurrency(expenseBreakdown.rawMaterialCost)}</li>
+                            <li>Employee Salaries: ${formatCurrency(expenseBreakdown.employeeSalaries)}</li>
+                            <li>Employee Expenses: ${formatCurrency(expenseBreakdown.employeeExpenses)}</li>
+                            <li>Employee Allowances: ${formatCurrency(expenseBreakdown.employeeAllowances)}</li>
+                            <li>Monthly Rent Fee: ${formatCurrency(expenseBreakdown.rent)}</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </AppLayout>
+
+            {/* Assigned Employees Section */}
+            <div className="bg-gray-50 p-4 rounded border">
+                <h2 className="text-xl font-semibold mb-3">Assigned Employees</h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {renderUser("Owner", bakery.owner)}
+                    {renderUser("Manager", bakery.manager)}
+                    {renderUser("Storekeeper", bakery.storekeeper)}
+                    {renderUser("Dough Mixer", bakery.doughMixer)}
+                    {renderUser("Baker", bakery.baker)}
+                    {renderUser("Helper", bakery.helper)}
+                    {renderUser("Cleaner", bakery.cleaner)}
+                    {renderUser("Gatekeeper", bakery.gatekeeper)}
+                </div>
+            </div>
+        </div>
     );
 };
 
